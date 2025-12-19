@@ -14,12 +14,12 @@ import (
 var (
 	ErrUserAlreadyExists  = errors.New("user with this email already exists")
 	ErrInvalidCredentials = errors.New("invalid email or password")
-	ErrUserNotFound       = errors.New("user not found")
 )
 
 type UserService interface {
 	Register(ctx context.Context, username, email, password string) (*domain.User, error)
 	Login(ctx context.Context, email, password string) (string, error)
+	GetUserByEmail(ctx context.Context, email string) (*domain.User, error)
 }
 
 type userService struct {
@@ -91,4 +91,8 @@ func (s *userService) Login(ctx context.Context, email, password string) (string
 	}
 
 	return token, nil
+}
+
+func (s *userService) GetUserByEmail(ctx context.Context, email string) (*domain.User, error) {
+	return s.userRepo.GetByEmail(ctx, email)
 }
