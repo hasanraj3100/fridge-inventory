@@ -25,6 +25,12 @@ func main() {
 	defer db.Close()
 	fmt.Println("database connected successfully")
 
+	if err := repository.Migrate(db); err != nil {
+		fmt.Println("failed to migrate database:", err)
+		return
+	}
+	fmt.Println("database migrated successfully")
+
 	// Utils
 	jwtManager := utils.NewJWTManager(cfg.JWTSecretKey)
 	passwordManager := utils.NewPasswordManager(12)

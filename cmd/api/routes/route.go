@@ -33,7 +33,7 @@ func (r *Router) Setup() http.Handler {
 	return handler
 }
 
-func (r *Router) healthCheck(w http.ResponseWriter, rq *http.Request) {
+func (r *Router) healthCheck(w http.ResponseWriter, rw *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
 	w.Write([]byte(`{"status":"ok"}`))
