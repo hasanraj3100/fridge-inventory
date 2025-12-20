@@ -2,9 +2,15 @@ package main
 
 import (
 	"fmt"
+	"log"
+	"net/http"
 
+	"github.com/hasanraj3100/fridge-inventory/cmd/api/handlers"
+	"github.com/hasanraj3100/fridge-inventory/cmd/api/routes"
 	"github.com/hasanraj3100/fridge-inventory/internal/config"
 	"github.com/hasanraj3100/fridge-inventory/internal/repository"
+	"github.com/hasanraj3100/fridge-inventory/internal/service"
+	"github.com/hasanraj3100/fridge-inventory/internal/utils"
 )
 
 func main() {
@@ -18,4 +24,26 @@ func main() {
 	}
 	defer db.Close()
 	fmt.Println("database connected successfully")
+
+	// Utils
+	jwtManager := utils.NewJWTManager(cfg.JWTSecretKey)
+	passwordManager := utils.NewPasswordManager(12)
+
+	// Domain Related
+	userRepo := repository.NewUserRepository(db)
+	userService := service.NewUserService(userRepo, passwordManager, jwtManager)
+
+	// Handlers
+	authHandler := handlers.NewAuthHandler(userService)
+
+	// Router
+	router := routes.NewRouter(authHandler)
+	handler := router.Setup()
+
+	addr := fmt.Sprintf(":%d", cfg.Port)
+	log.Printf("Server starting on http://localhost%s", addr)
+
+	if err := http.ListenAndServe(addr, handler); err != nil {
+		log.Fatalf("Server failed to start : %v", err)
+	}
 }

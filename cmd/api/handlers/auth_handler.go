@@ -6,9 +6,12 @@ import (
 	"fmt"
 	"net/http"
 
+	"github.com/go-playground/validator/v10"
 	"github.com/hasanraj3100/fridge-inventory/cmd/api/dto"
 	"github.com/hasanraj3100/fridge-inventory/internal/service"
 )
+
+var validate = validator.New()
 
 type AuthHandler struct {
 	userService service.UserService
@@ -29,6 +32,11 @@ func (ah *AuthHandler) Register(w http.ResponseWriter, r *http.Request) {
 	var req dto.RegisterRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		responseWithError(w, http.StatusBadRequest, "Invalid request payload")
+		return
+	}
+
+	if err := validate.Struct(req); err != nil {
+		responseWithError(w, http.StatusBadRequest, err.Error())
 		return
 	}
 
@@ -75,6 +83,11 @@ func (ah *AuthHandler) Login(w http.ResponseWriter, r *http.Request) {
 			responseWithError(w, http.StatusInternalServerError, "Failed to login")
 			fmt.Println("Login error:", err)
 		}
+		return
+	}
+
+	if err := validate.Struct(req); err != nil {
+		responseWithError(w, http.StatusBadRequest, err.Error())
 		return
 	}
 
