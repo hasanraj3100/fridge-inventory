@@ -45,6 +45,7 @@ func (ah *AuthHandler) Register(w http.ResponseWriter, r *http.Request) {
 		if err == service.ErrUserAlreadyExists {
 			responseWithError(w, http.StatusConflict, err.Error())
 		} else {
+			fmt.Println("Register error:", err)
 			responseWithError(w, http.StatusInternalServerError, "Failed to register user")
 		}
 		return
@@ -75,6 +76,11 @@ func (ah *AuthHandler) Login(w http.ResponseWriter, r *http.Request) {
 	}
 
 	var req dto.LoginRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		responseWithError(w, http.StatusBadRequest, "Invalid request payload")
+		return
+	}
+
 	token, err := ah.userService.Login(r.Context(), req.Email, req.Password)
 	if err != nil {
 		if err == service.ErrInvalidCredentials {
