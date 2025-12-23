@@ -3,7 +3,7 @@ package routes
 import (
 	"net/http"
 
-	"github.com/hasanraj3100/fridge-inventory/cmd/api/handlers"
+	"github.com/hasanraj3100/fridge-inventory/internal/api/handlers"
 	"github.com/hasanraj3100/fridge-inventory/internal/middleware"
 )
 

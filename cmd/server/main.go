@@ -5,8 +5,8 @@ import (
 	"log"
 	"net/http"
 
-	"github.com/hasanraj3100/fridge-inventory/cmd/api/handlers"
-	"github.com/hasanraj3100/fridge-inventory/cmd/api/routes"
+	"github.com/hasanraj3100/fridge-inventory/internal/api/handlers"
+	"github.com/hasanraj3100/fridge-inventory/internal/api/routes"
 	"github.com/hasanraj3100/fridge-inventory/internal/config"
 	"github.com/hasanraj3100/fridge-inventory/internal/repository"
 	"github.com/hasanraj3100/fridge-inventory/internal/service"

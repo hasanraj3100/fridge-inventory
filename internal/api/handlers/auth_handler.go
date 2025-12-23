@@ -7,7 +7,7 @@ import (
 	"net/http"
 
 	"github.com/go-playground/validator/v10"
-	"github.com/hasanraj3100/fridge-inventory/cmd/api/dto"
+	"github.com/hasanraj3100/fridge-inventory/internal/api/dto"
 	"github.com/hasanraj3100/fridge-inventory/internal/service"
 )
 
