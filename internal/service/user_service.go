@@ -3,9 +3,11 @@ package service
 
 import (
 	"context"
+	"database/sql"
 	"errors"
 	"fmt"
 
+	"github.com/hasanraj3100/fridge-inventory/internal/api/dto"
 	"github.com/hasanraj3100/fridge-inventory/internal/domain"
 	"github.com/hasanraj3100/fridge-inventory/internal/repository"
 	"github.com/hasanraj3100/fridge-inventory/internal/utils"
@@ -17,8 +19,8 @@ var (
 )
 
 type UserService interface {
-	Register(ctx context.Context, username, email, password string) (*domain.User, error)
-	Login(ctx context.Context, email, password string) (string, error)
+	Register(ctx context.Context, params dto.RegisterRequest) (*domain.User, error)
+	Login(ctx context.Context, params dto.LoginRequest) (string, *domain.User, error)
 	GetUserByEmail(ctx context.Context, email string) (*domain.User, error)
 }
 
@@ -36,49 +38,45 @@ func NewUserService(userRepo repository.UserRepository, passwordManager *utils.P
 	}
 }
 
-func (s *userService) Register(ctx context.Context, username, email, password string) (*domain.User, error) {
-	if username == "" || email == "" || password == "" {
-		return nil, errors.New("username, email, and password cannot be empty")
-	}
-
-	existingUser, err := s.userRepo.GetByEmail(ctx, email)
+func (s *userService) Register(ctx context.Context, params dto.RegisterRequest) (*domain.User, error) {
+	existingUser, err := s.userRepo.GetByEmail(ctx, params.Email)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to check existing user: %w", err)
 	}
 	if existingUser != nil {
 		return nil, ErrUserAlreadyExists
 	}
 
-	hashedPassword, err := s.passwordManager.HashPassword(password)
+	hashedPassword, err := s.passwordManager.HashPassword(params.Password)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to hash password: %w", err)
 	}
 
 	newUser := &domain.User{
-		UserName:     username,
-		Email:        email,
+		UserName:     params.Username,
+		Email:        params.Email,
 		PasswordHash: hashedPassword,
 	}
 
 	if err := s.userRepo.Create(ctx, newUser); err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to create user: %w", err)
 	}
 	newUser.PasswordHash = ""
 
 	return newUser, nil
 }
 
-func (s *userService) Login(ctx context.Context, email, password string) (string, error) {
-	user, err := s.userRepo.GetByEmail(ctx, email)
+func (s *userService) Login(ctx context.Context, params dto.LoginRequest) (string, *domain.User, error) {
+	user, err := s.userRepo.GetByEmail(ctx, params.Email)
 	if err != nil {
-		return "", err
+		return "", nil, fmt.Errorf("failed to get user by email: %w", err)
 	}
 	if user == nil {
-		return "", ErrInvalidCredentials
+		return "", nil, ErrInvalidCredentials
 	}
 
-	if err := s.passwordManager.VerifyPassword(user.PasswordHash, password); err != nil {
-		return "", ErrInvalidCredentials
+	if err := s.passwordManager.VerifyPassword(user.PasswordHash, params.Password); err != nil {
+		return "", nil, ErrInvalidCredentials
 	}
 
 	token, err := s.jwtManager.GenerateToken(&utils.PayLoad{
@@ -87,12 +85,21 @@ func (s *userService) Login(ctx context.Context, email, password string) (string
 		Email:    user.Email,
 	})
 	if err != nil {
-		return "", fmt.Errorf("failed to generate JWT token: %w", err)
+		return "", nil, fmt.Errorf("failed to generate JWT token: %w", err)
 	}
 
-	return token, nil
+	user.PasswordHash = ""
+
+	return token, user, nil
 }
 
 func (s *userService) GetUserByEmail(ctx context.Context, email string) (*domain.User, error) {
-	return s.userRepo.GetByEmail(ctx, email)
+	user, err := s.userRepo.GetByEmail(ctx, email)
+	if err == sql.ErrNoRows {
+		return nil, nil
+	}
+	if err != nil {
+		return nil, fmt.Errorf("failed to get user by email: %w", err)
+	}
+	return user, nil
 }
