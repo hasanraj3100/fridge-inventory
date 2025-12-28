@@ -19,7 +19,7 @@ var (
 )
 
 type UserService interface {
-	Register(ctx context.Context, params dto.RegisterRequest) (*domain.User, error)
+	Register(ctx context.Context, params dto.RegisterRequest) error
 	Login(ctx context.Context, params dto.LoginRequest) (string, *domain.User, error)
 	GetUserByEmail(ctx context.Context, email string) (*domain.User, error)
 }
@@ -38,18 +38,18 @@ func NewUserService(userRepo repository.UserRepository, passwordManager *utils.P
 	}
 }
 
-func (s *userService) Register(ctx context.Context, params dto.RegisterRequest) (*domain.User, error) {
+func (s *userService) Register(ctx context.Context, params dto.RegisterRequest) error {
 	existingUser, err := s.userRepo.GetByEmail(ctx, params.Email)
 	if err != nil {
-		return nil, fmt.Errorf("failed to check existing user: %w", err)
+		return fmt.Errorf("failed to check existing user: %w", err)
 	}
 	if existingUser != nil {
-		return nil, ErrUserAlreadyExists
+		return ErrUserAlreadyExists
 	}
 
 	hashedPassword, err := s.passwordManager.HashPassword(params.Password)
 	if err != nil {
-		return nil, fmt.Errorf("failed to hash password: %w", err)
+		return fmt.Errorf("failed to hash password: %w", err)
 	}
 
 	newUser := &domain.User{
@@ -59,11 +59,11 @@ func (s *userService) Register(ctx context.Context, params dto.RegisterRequest) 
 	}
 
 	if err := s.userRepo.Create(ctx, newUser); err != nil {
-		return nil, fmt.Errorf("failed to create user: %w", err)
+		return fmt.Errorf("failed to create user: %w", err)
 	}
 	newUser.PasswordHash = ""
 
-	return newUser, nil
+	return nil
 }
 
 func (s *userService) Login(ctx context.Context, params dto.LoginRequest) (string, *domain.User, error) {
