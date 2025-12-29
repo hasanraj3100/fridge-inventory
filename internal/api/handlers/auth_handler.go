@@ -3,7 +3,9 @@ package handlers
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
+	"log"
 	"net/http"
 
 	"github.com/go-playground/validator/v10"
@@ -36,23 +38,28 @@ func (ah *AuthHandler) Register(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if err := validate.Struct(req); err != nil {
-		responseWithError(w, http.StatusBadRequest, err.Error())
+		niceErrors := formatValidationError(err)
+		responseWithValidationErrors(w, http.StatusBadRequest, "Validation failed", niceErrors)
 		return
 	}
 
-	user, err := ah.userService.Register(r.Context(), req.Username, req.Email, req.Password)
+	err := ah.userService.Register(r.Context(), req)
 	if err != nil {
-		if err == service.ErrUserAlreadyExists {
+		if errors.Is(err, service.ErrUserAlreadyExists) {
 			responseWithError(w, http.StatusConflict, err.Error())
 		} else {
-			fmt.Println("Register error:", err)
+			log.Printf("Register error: %v", err)
 			responseWithError(w, http.StatusInternalServerError, "Failed to register user")
 		}
 		return
 	}
 
-	token, err := ah.userService.Login(r.Context(), req.Email, req.Password)
+	token, user, err := ah.userService.Login(r.Context(), dto.LoginRequest{
+		Email:    req.Email,
+		Password: req.Password,
+	})
 	if err != nil {
+		log.Printf("Token generation error: %v", err)
 		responseWithError(w, http.StatusInternalServerError, "Failed to generate token")
 		return
 	}
@@ -81,28 +88,23 @@ func (ah *AuthHandler) Login(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	token, err := ah.userService.Login(r.Context(), req.Email, req.Password)
+	if err := validate.Struct(req); err != nil {
+		niceErrors := formatValidationError(err)
+		responseWithValidationErrors(w, http.StatusBadRequest, "Validation failed", niceErrors)
+		return
+	}
+
+	token, user, err := ah.userService.Login(r.Context(), req)
 	if err != nil {
-		if err == service.ErrInvalidCredentials {
+		if errors.Is(err, service.ErrInvalidCredentials) {
 			responseWithError(w, http.StatusUnauthorized, err.Error())
 		} else {
+			log.Printf("Login error: %v", err)
 			responseWithError(w, http.StatusInternalServerError, "Failed to login")
-			fmt.Println("Login error:", err)
 		}
 		return
 	}
 
-	if err := validate.Struct(req); err != nil {
-		responseWithError(w, http.StatusBadRequest, err.Error())
-		return
-	}
-
-	user, err := ah.userService.GetUserByEmail(r.Context(), req.Email)
-	if err != nil || user == nil {
-		responseWithError(w, http.StatusInternalServerError, "Failed to retrieve user details")
-		fmt.Println("GetUserByEmail error:", err)
-		return
-	}
 	response := dto.AuthResponse{
 		Token: token,
 		User: dto.UserDetail{
@@ -127,4 +129,31 @@ func responseWithJSON(w http.ResponseWriter, statusCode int, data any) {
 
 func responseWithError(w http.ResponseWriter, statusCode int, message string) {
 	responseWithJSON(w, statusCode, map[string]string{"error": message})
+}
+
+func responseWithValidationErrors(w http.ResponseWriter, statusCode int, message string, details any) {
+	responseWithJSON(w, statusCode, map[string]any{
+		"error":   message,
+		"details": details,
+	})
+}
+
+func formatValidationError(err error) map[string]string {
+	errors := make(map[string]string)
+
+	if vdErrors, ok := err.(validator.ValidationErrors); ok {
+		for _, f := range vdErrors {
+			switch f.Tag() {
+			case "required":
+				errors[f.Field()] = "this field is required"
+			case "email":
+				errors[f.Field()] = "invalid email format"
+			case "min":
+				errors[f.Field()] = fmt.Sprintf("must be at least %s characters", f.Param())
+			default:
+				errors[f.Field()] = fmt.Sprintf("failed validation on %s", f.Tag())
+			}
+		}
+	}
+	return errors
 }
