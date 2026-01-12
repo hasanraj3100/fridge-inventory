@@ -12,6 +12,10 @@ type contextKey string
 
 const UserIDKey contextKey = "userID"
 
+type AuthUser struct {
+	ID int64
+}
+
 type AuthConfig struct {
 	JWTManager *utils.JWTManager
 	Skipper    func(r *http.Request) bool
@@ -40,24 +44,20 @@ func AuthWithConfig(config AuthConfig) func(http.Handler) http.Handler {
 
 			parts := strings.SplitN(authHeader, " ", 2)
 
-			if len(parts) != 2 || parts[0] != "Bearer" {
+			if len(parts) != 2 || !strings.EqualFold(parts[0], "Bearer") {
 				http.Error(w, "Invalid authorization header format", http.StatusUnauthorized)
 				return
 			}
 			token := parts[1]
-			userID, err := config.JWTManager.VerifyToken(token)
+
+			payload, err := config.JWTManager.VerifyToken(token)
 			if err != nil {
-				http.Error(w, "invalid or expired token", http.StatusUnauthorized)
+				http.Error(w, http.StatusText(http.StatusUnauthorized), http.StatusUnauthorized)
 				return
 			}
 
-			ctx := context.WithValue(r.Context(), UserIDKey, userID)
+			ctx := context.WithValue(r.Context(), UserIDKey, AuthUser{ID: int64(payload.Sub)})
 			next.ServeHTTP(w, r.WithContext(ctx))
 		})
 	}
-}
-
-func GetUserID(ctx context.Context) (int64, bool) {
-	userID, ok := ctx.Value(UserIDKey).(int64)
-	return userID, ok
 }
