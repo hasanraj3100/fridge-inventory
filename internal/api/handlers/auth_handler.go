@@ -7,13 +7,12 @@ import (
 	"log"
 	"net/http"
 
-	"github.com/go-playground/validator/v10"
 	"github.com/hasanraj3100/fridge-inventory/internal/api/dto"
 	"github.com/hasanraj3100/fridge-inventory/internal/api/response"
 	"github.com/hasanraj3100/fridge-inventory/internal/service"
 )
 
-var validate = validator.New()
+var validate = response.Validator
 
 type AuthHandler struct {
 	userService service.UserService

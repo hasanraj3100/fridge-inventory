@@ -8,6 +8,8 @@ import (
 	"github.com/go-playground/validator/v10"
 )
 
+var Validator = validator.New()
+
 func ResponseWithValidationErrors(w http.ResponseWriter, statusCode int, message string, details any) {
 	ResponseWithJSON(w, statusCode, map[string]any{
 		"error":   message,
