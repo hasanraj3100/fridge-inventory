@@ -43,7 +43,7 @@ func main() {
 	authHandler := handlers.NewAuthHandler(userService)
 
 	// Router
-	router := routes.NewRouter(authHandler)
+	router := routes.NewRouter(authHandler, jwtManager)
 	handler := router.Setup()
 
 	addr := fmt.Sprintf(":%d", cfg.Port)

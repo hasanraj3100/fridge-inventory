@@ -5,17 +5,20 @@ import (
 
 	"github.com/hasanraj3100/fridge-inventory/internal/api/handlers"
 	"github.com/hasanraj3100/fridge-inventory/internal/middleware"
+	"github.com/hasanraj3100/fridge-inventory/internal/utils"
 )
 
 type Router struct {
 	mux         *http.ServeMux
 	authHandler *handlers.AuthHandler
+	jwtManager  *utils.JWTManager
 }
 
-func NewRouter(authHandler *handlers.AuthHandler) *Router {
+func NewRouter(authHandler *handlers.AuthHandler, jwtManager *utils.JWTManager) *Router {
 	return &Router{
 		mux:         http.NewServeMux(),
 		authHandler: authHandler,
+		jwtManager:  jwtManager,
 	}
 }
 
@@ -28,6 +31,14 @@ func (r *Router) Setup() http.Handler {
 		middleware.Recovery(),
 		middleware.Logger(),
 		middleware.CORS(),
+		middleware.AuthWithConfig(middleware.AuthConfig{
+			JWTManager: r.jwtManager,
+			Skipper: func(r *http.Request) bool {
+				return r.URL.Path == "/api/v1/auth/register" ||
+					r.URL.Path == "/api/v1/auth/login" ||
+					r.URL.Path == "/health"
+			},
+		}),
 	)(r.mux)
 
 	return handler
