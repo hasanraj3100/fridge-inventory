@@ -3,6 +3,7 @@ package service
 import (
 	"context"
 	"fmt"
+	"time"
 
 	"github.com/hasanraj3100/fridge-inventory/internal/api/dto"
 	"github.com/hasanraj3100/fridge-inventory/internal/domain"
@@ -27,14 +28,24 @@ func NewFridgeItemService(fridgeItemRepo repository.FridgeItemRepository) Fridge
 }
 
 func (s *fridgeItemService) AddItem(ctx context.Context, params dto.FridgeItemAddRequest) (*domain.FridgeItem, error) {
+	boughtAt, err := time.Parse("2006-01-02", params.BoughtAt)
+	if err != nil {
+		return nil, fmt.Errorf("invalid bought_at date format: %w", err)
+	}
+
+	expiresAt, err := time.Parse("2006-01-02", params.ExpiresAt)
+	if err != nil {
+		return nil, fmt.Errorf("invalid expires_at date format: %w", err)
+	}
+
 	newItem := &domain.FridgeItem{
 		Name:      params.Name,
 		Category:  params.Category,
 		Quantity:  params.Quantity,
 		Unit:      params.Unit,
 		UserID:    params.UserID,
-		BoughtAt:  params.BoughtAt,
-		ExpiresAt: params.ExpiresAt,
+		BoughtAt:  boughtAt,
+		ExpiresAt: expiresAt,
 		MinStock:  params.MinStock,
 	}
 

@@ -30,11 +30,22 @@ func (repo *fridgeItemRepository) Create(ctx context.Context, item *domain.Fridg
 	query := `INSERT INTO fridge_items (
 	name, category, quantity, unit, user_id, bought_at, expires_at, min_stock, created_at, updated_at
 	)
-	VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10) RETURNING id`
+	VALUES (
+	:name, :category, :quantity, :unit, :user_id, :bought_at, :expires_at, :min_stock, :created_at, :updated_at
+	) RETURNING id`
 
-	err := repo.DB.QueryRowContext(ctx, query, item).Scan(&item.ID)
+	res, err := repo.DB.NamedQueryContext(ctx, query, item)
 	if err != nil {
 		return nil, fmt.Errorf("failed to insert item to database: %w", err)
 	}
+	defer res.Close()
+
+	if res.Next() {
+		err = res.Scan(&item.ID)
+		if err != nil {
+			return nil, fmt.Errorf("failed to retrieve inserted item ID: %w", err)
+		}
+	}
+
 	return item, nil
 }

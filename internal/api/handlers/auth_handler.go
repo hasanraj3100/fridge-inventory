@@ -25,11 +25,6 @@ func NewAuthHandler(userService service.UserService) *AuthHandler {
 }
 
 func (ah *AuthHandler) Register(w http.ResponseWriter, r *http.Request) {
-	if r.Method != http.MethodPost {
-		response.ResponseWithError(w, http.StatusMethodNotAllowed, "Method not allowed")
-		return
-	}
-
 	var req dto.RegisterRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		response.ResponseWithError(w, http.StatusBadRequest, "Invalid request payload")
@@ -76,11 +71,6 @@ func (ah *AuthHandler) Register(w http.ResponseWriter, r *http.Request) {
 }
 
 func (ah *AuthHandler) Login(w http.ResponseWriter, r *http.Request) {
-	if r.Method != http.MethodPost {
-		response.ResponseWithError(w, http.StatusMethodNotAllowed, "Method not allowed")
-		return
-	}
-
 	var req dto.LoginRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		response.ResponseWithError(w, http.StatusBadRequest, "Invalid request payload")

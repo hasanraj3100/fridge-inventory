@@ -9,23 +9,26 @@ import (
 )
 
 type Router struct {
-	mux         *http.ServeMux
-	authHandler *handlers.AuthHandler
-	jwtManager  *utils.JWTManager
+	mux               *http.ServeMux
+	authHandler       *handlers.AuthHandler
+	fridgeItemHandler *handlers.FridgeItemHandler
+	jwtManager        *utils.JWTManager
 }
 
-func NewRouter(authHandler *handlers.AuthHandler, jwtManager *utils.JWTManager) *Router {
+func NewRouter(authHandler *handlers.AuthHandler, fridgeItemHandler *handlers.FridgeItemHandler, jwtManager *utils.JWTManager) *Router {
 	return &Router{
-		mux:         http.NewServeMux(),
-		authHandler: authHandler,
-		jwtManager:  jwtManager,
+		mux:               http.NewServeMux(),
+		authHandler:       authHandler,
+		fridgeItemHandler: fridgeItemHandler,
+		jwtManager:        jwtManager,
 	}
 }
 
 func (r *Router) Setup() http.Handler {
-	r.mux.HandleFunc("/api/v1/auth/register", r.authHandler.Register)
-	r.mux.HandleFunc("/api/v1/auth/login", r.authHandler.Login)
-	r.mux.HandleFunc("/health", r.healthCheck)
+	r.mux.Handle("POST /api/v1/auth/register", http.HandlerFunc(r.authHandler.Register))
+	r.mux.Handle("POST /api/v1/auth/login", http.HandlerFunc(r.authHandler.Login))
+	r.mux.Handle("GET /health", http.HandlerFunc(r.healthCheck))
+	r.mux.Handle("POST /api/v1/items", http.HandlerFunc(r.fridgeItemHandler.AddItem))
 
 	handler := middleware.Chain(
 		middleware.Recovery(),

@@ -39,11 +39,15 @@ func main() {
 	userRepo := repository.NewUserRepository(db)
 	userService := service.NewUserService(userRepo, passwordManager, jwtManager)
 
+	fridgeRepo := repository.NewFridgeItemRepository(db)
+	fridgeItemService := service.NewFridgeItemService(fridgeRepo)
+
 	// Handlers
 	authHandler := handlers.NewAuthHandler(userService)
+	fridgeItemHandler := handlers.NewFridgeItemHandler(fridgeItemService)
 
 	// Router
-	router := routes.NewRouter(authHandler, jwtManager)
+	router := routes.NewRouter(authHandler, fridgeItemHandler, jwtManager)
 	handler := router.Setup()
 
 	addr := fmt.Sprintf(":%d", cfg.Port)

@@ -61,3 +61,11 @@ func AuthWithConfig(config AuthConfig) func(http.Handler) http.Handler {
 		})
 	}
 }
+
+func GetAuthUser(ctx context.Context) (*AuthUser, bool) {
+	user, ok := ctx.Value(UserIDKey).(AuthUser)
+	if !ok {
+		return nil, false
+	}
+	return &user, true
+}
