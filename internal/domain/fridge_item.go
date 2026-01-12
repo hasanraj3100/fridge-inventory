@@ -19,7 +19,7 @@ type FridgeItem struct {
 	Category  FoodCategory `json:"category" db:"category"`
 	Quantity  float32      `json:"quantity" db:"quantity"`
 	Unit      string       `json:"unit" db:"unit"`
-	UserID    string       `json:"user_id" db:"user_id"`
+	UserID    int          `json:"user_id" db:"user_id"`
 	BoughtAt  time.Time    `json:"bought_at" db:"bought_at"`
 	ExpiresAt time.Time    `json:"expires_at" db:"expires_at"`
 	MinStock  float32      `json:"min_stock" db:"min_stock"`
