@@ -5,7 +5,7 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/go-playground/validator"
+	"github.com/go-playground/validator/v10"
 )
 
 func ResponseWithValidationErrors(w http.ResponseWriter, statusCode int, message string, details any) {
