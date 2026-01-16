@@ -48,3 +48,20 @@ func (fih *FridgeItemHandler) AddItem(w http.ResponseWriter, r *http.Request) {
 	}
 	response.ResponseWithJSON(w, http.StatusCreated, createdItem)
 }
+
+func (fih *FridgeItemHandler) GetByUserID(w http.ResponseWriter, r *http.Request) {
+	user, ok := middleware.GetAuthUser(r.Context())
+	if !ok {
+		response.ResponseWithError(w, http.StatusUnauthorized, "Unauthorized")
+		return
+	}
+
+	items, err := fih.fridgeItemService.GetByUserID(r.Context(), user.ID)
+	if err != nil {
+		response.ResponseWithError(w, http.StatusInternalServerError, "Failed to get items")
+		log.Printf("GetItem error: %v", err)
+		return
+	}
+
+	response.ResponseWithJSON(w, http.StatusOK, items)
+}

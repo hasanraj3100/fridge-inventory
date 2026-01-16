@@ -29,6 +29,7 @@ func (r *Router) Setup() http.Handler {
 	r.mux.Handle("POST /api/v1/auth/login", http.HandlerFunc(r.authHandler.Login))
 	r.mux.Handle("GET /health", http.HandlerFunc(r.healthCheck))
 	r.mux.Handle("POST /api/v1/items", http.HandlerFunc(r.fridgeItemHandler.AddItem))
+	r.mux.Handle("GET /api/v1/items", http.HandlerFunc(r.fridgeItemHandler.GetByUserID))
 
 	handler := middleware.Chain(
 		middleware.Recovery(),

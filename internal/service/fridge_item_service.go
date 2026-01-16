@@ -15,6 +15,7 @@ type FridgeItemService interface {
 		ctx context.Context,
 		params dto.FridgeItemAddRequest,
 	) (*domain.FridgeItem, error)
+	GetByUserID(ctx context.Context, userID int64) ([]*domain.FridgeItem, error)
 }
 
 type fridgeItemService struct {
@@ -55,4 +56,8 @@ func (s *fridgeItemService) AddItem(ctx context.Context, params dto.FridgeItemAd
 	}
 
 	return createdItem, nil
+}
+
+func (s *fridgeItemService) GetByUserID(ctx context.Context, userID int64) ([]*domain.FridgeItem, error) {
+	return s.fridgeItemRepo.GetByUserID(ctx, userID)
 }
