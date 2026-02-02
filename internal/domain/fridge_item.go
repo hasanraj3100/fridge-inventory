@@ -22,7 +22,7 @@ type FridgeItem struct {
 	UserID    int64        `json:"user_id" db:"user_id"`
 	BoughtAt  time.Time    `json:"bought_at" db:"bought_at"`
 	ExpiresAt time.Time    `json:"expires_at" db:"expires_at"`
-	MinStock  float32      `json:"min_stock" db:"min_stock"`
+	MinThreshold float32      `json:"min_threshold" db:"min_threshold"`
 	CreatedAt time.Time    `json:"created_at" db:"created_at"`
 	UpdatedAt time.Time    `json:"updated_at" db:"updated_at"`
 }

@@ -12,5 +12,5 @@ type FridgeItemAddRequest struct {
 	UserID    int64               `json:"-"`
 	BoughtAt  string              `json:"bought_at" validate:"required,datetime=2006-01-02"`
 	ExpiresAt string              `json:"expires_at" validate:"required,datetime=2006-01-02"`
-	MinStock  float32             `json:"min_stock" validate:"required,gte=0"`
+	MinThreshold float32             `json:"min_threshold" validate:"required,gte=0"`
 }

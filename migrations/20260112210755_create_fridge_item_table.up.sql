@@ -11,7 +11,7 @@ CREATE TABLE IF NOT EXISTS fridge_items (
     bought_at TIMESTAMPTZ NOT NULL,
     expires_at TIMESTAMPTZ NOT NULL,
 
-    min_stock REAL NOT NULL DEFAULT 0,
+    min_threshold REAL NOT NULL DEFAULT 0,
 
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()

@@ -29,10 +29,10 @@ func (repo *fridgeItemRepository) Create(ctx context.Context, item *domain.Fridg
 	item.UpdatedAt = time.Now().UTC()
 
 	query := `INSERT INTO fridge_items (
-	name, category, quantity, unit, user_id, bought_at, expires_at, min_stock, created_at, updated_at
+	name, category, quantity, unit, user_id, bought_at, expires_at, min_threshold, created_at, updated_at
 	)
 	VALUES (
-	:name, :category, :quantity, :unit, :user_id, :bought_at, :expires_at, :min_stock, :created_at, :updated_at
+	:name, :category, :quantity, :unit, :user_id, :bought_at, :expires_at, :min_threshold, :created_at, :updated_at
 	) RETURNING id`
 
 	res, err := repo.DB.NamedQueryContext(ctx, query, item)

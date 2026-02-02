@@ -47,7 +47,7 @@ func (s *fridgeItemService) AddItem(ctx context.Context, params dto.FridgeItemAd
 		UserID:    params.UserID,
 		BoughtAt:  boughtAt,
 		ExpiresAt: expiresAt,
-		MinStock:  params.MinStock,
+		MinThreshold:  params.MinThreshold,
 	}
 
 	createdItem, err := s.fridgeItemRepo.Create(ctx, newItem)
