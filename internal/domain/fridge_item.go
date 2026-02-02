@@ -14,15 +14,15 @@ var (
 )
 
 type FridgeItem struct {
-	ID        int          `json:"id" db:"id"`
-	Name      string       `json:"name" db:"name"`
-	Category  FoodCategory `json:"category" db:"category"`
-	Quantity  float32      `json:"quantity" db:"quantity"`
-	Unit      string       `json:"unit" db:"unit"`
-	UserID    int64        `json:"user_id" db:"user_id"`
-	BoughtAt  time.Time    `json:"bought_at" db:"bought_at"`
-	ExpiresAt time.Time    `json:"expires_at" db:"expires_at"`
+	ID           int          `json:"id" db:"id"`
+	Name         string       `json:"name" db:"name"`
+	Category     FoodCategory `json:"category" db:"category"`
+	Quantity     float32      `json:"quantity" db:"quantity"`
+	Unit         string       `json:"unit" db:"unit"`
+	UserID       int64        `json:"user_id" db:"user_id"`
+	BoughtAt     time.Time    `json:"bought_at" db:"bought_at"`
+	ExpiresAt    time.Time    `json:"expires_at" db:"expires_at"`
 	MinThreshold float32      `json:"min_threshold" db:"min_threshold"`
-	CreatedAt time.Time    `json:"created_at" db:"created_at"`
-	UpdatedAt time.Time    `json:"updated_at" db:"updated_at"`
+	CreatedAt    time.Time    `json:"created_at" db:"created_at"`
+	UpdatedAt    time.Time    `json:"updated_at" db:"updated_at"`
 }
