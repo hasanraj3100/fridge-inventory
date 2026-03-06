@@ -6,8 +6,8 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/hasanraj3100/fridge-inventory/internal/db"
 	"github.com/hasanraj3100/fridge-inventory/internal/domain"
-	"github.com/jmoiron/sqlx"
 )
 
 type UserRepository interface {
@@ -16,10 +16,10 @@ type UserRepository interface {
 }
 
 type userRepository struct {
-	DB *sqlx.DB
+	DB db.DBTX
 }
 
-func NewUserRepository(db *sqlx.DB) UserRepository {
+func NewUserRepository(db db.DBTX) UserRepository {
 	return &userRepository{
 		DB: db,
 	}
@@ -49,7 +49,8 @@ func (userRepo *userRepository) GetByEmail(ctx context.Context, email string) (*
 
 	query := `SELECT * FROM users WHERE email = $1`
 
-	err := userRepo.DB.GetContext(ctx, &user, query, email)
+	row := userRepo.DB.QueryRowContext(ctx, query, email)
+	err := row.Scan(&user.ID, &user.UserName, &user.Email, &user.PasswordHash, &user.CreatedAt, &user.UpdatedAt)
 	if err != nil {
 		if err == sql.ErrNoRows {
 			return nil, nil

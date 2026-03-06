@@ -1,5 +1,5 @@
-// Package repository provides application's core data access layer.
-package repository
+// Package db provides Database related utilities and functions
+package db
 
 import (
 	"fmt"

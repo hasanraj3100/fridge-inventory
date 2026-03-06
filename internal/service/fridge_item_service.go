@@ -29,25 +29,25 @@ func NewFridgeItemService(fridgeItemRepo repository.FridgeItemRepository) Fridge
 }
 
 func (s *fridgeItemService) AddItem(ctx context.Context, params dto.FridgeItemAddRequest) (*domain.FridgeItem, error) {
-	boughtAt, err := time.Parse("2006-01-02", params.BoughtAt)
+	boughtAt, err := time.Parse(time.DateOnly, params.BoughtAt)
 	if err != nil {
 		return nil, fmt.Errorf("invalid bought_at date format: %w", err)
 	}
 
-	expiresAt, err := time.Parse("2006-01-02", params.ExpiresAt)
+	expiresAt, err := time.Parse(time.DateOnly, params.ExpiresAt)
 	if err != nil {
 		return nil, fmt.Errorf("invalid expires_at date format: %w", err)
 	}
 
 	newItem := &domain.FridgeItem{
-		Name:      params.Name,
-		Category:  params.Category,
-		Quantity:  params.Quantity,
-		Unit:      params.Unit,
-		UserID:    params.UserID,
-		BoughtAt:  boughtAt,
-		ExpiresAt: expiresAt,
-		MinThreshold:  params.MinThreshold,
+		Name:         params.Name,
+		Category:     params.Category,
+		Quantity:     params.Quantity,
+		Unit:         params.Unit,
+		UserID:       params.UserID,
+		BoughtAt:     boughtAt,
+		ExpiresAt:    expiresAt,
+		MinThreshold: params.MinThreshold,
 	}
 
 	createdItem, err := s.fridgeItemRepo.Create(ctx, newItem)

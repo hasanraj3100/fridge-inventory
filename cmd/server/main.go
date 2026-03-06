@@ -8,6 +8,7 @@ import (
 	"github.com/hasanraj3100/fridge-inventory/internal/api/handlers"
 	"github.com/hasanraj3100/fridge-inventory/internal/api/routes"
 	"github.com/hasanraj3100/fridge-inventory/internal/config"
+	"github.com/hasanraj3100/fridge-inventory/internal/db"
 	"github.com/hasanraj3100/fridge-inventory/internal/repository"
 	"github.com/hasanraj3100/fridge-inventory/internal/service"
 	"github.com/hasanraj3100/fridge-inventory/internal/utils"
@@ -17,7 +18,7 @@ func main() {
 	cfg := config.GetConfig()
 	fmt.Println("config loaded successfully")
 
-	db, err := repository.NewDatabaseConnection(cfg)
+	db, err := db.NewDatabaseConnection(cfg)
 	if err != nil {
 		fmt.Println("failed to connect to database:", err)
 		return
