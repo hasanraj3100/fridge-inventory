@@ -76,17 +76,17 @@ func (repo *fridgeItemRepository) Update(ctx context.Context, item *domain.Fridg
 
 	query := `
 		UPDATE fridge_items SET
-			name = :name,
-			category = :category,
-			quantity = :quantity,
-			unit = :unit,
-			bought_at = :bought_at,
-			expires_at = :expires_at,
-			min_threshold = :min_threshold,
-			updated_at = :updated_at
-		WHERE id = :id
+			name = $1,
+			category = $2,
+			quantity = $3,
+			unit = $4,
+			bought_at = $5,
+			expires_at = $6,
+			min_threshold = $7,
+			updated_at = $8
+		WHERE id = $9
 	`
-	err := repo.DB.QueryRowContext(ctx, query, item).Scan(&item.ID)
+	_, err := repo.DB.ExecContext(ctx, query, item.Name, item.Category, item.Quantity, item.Unit, item.BoughtAt, item.ExpiresAt, item.MinThreshold, item.UpdatedAt, item.ID)
 	if err != nil {
 		return fmt.Errorf("failed to update fridge item: %w", err)
 	}
@@ -98,7 +98,7 @@ func (repo *fridgeItemRepository) GetByID(ctx context.Context, id int64) (*domai
 	query := `SELECT * FROM fridge_items WHERE id = $1`
 
 	var item domain.FridgeItem
-	err := repo.DB.QueryRowContext(ctx, query, id).Scan(&item)
+	err := repo.DB.QueryRowContext(ctx, query, id).Scan(&item.ID, &item.Name, &item.Category, &item.Quantity, &item.Unit, &item.UserID, &item.BoughtAt, &item.ExpiresAt, &item.MinThreshold, &item.CreatedAt, &item.UpdatedAt)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get fridge item by ID: %w", err)
 	}

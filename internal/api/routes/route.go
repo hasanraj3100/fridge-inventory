@@ -12,15 +12,22 @@ type Router struct {
 	mux               *http.ServeMux
 	authHandler       *handlers.AuthHandler
 	fridgeItemHandler *handlers.FridgeItemHandler
+	itemUsageHandler  *handlers.ItemUsageHandler
 	jwtManager        *utils.JWTManager
 }
 
-func NewRouter(authHandler *handlers.AuthHandler, fridgeItemHandler *handlers.FridgeItemHandler, jwtManager *utils.JWTManager) *Router {
+func NewRouter(
+	authHandler *handlers.AuthHandler,
+	fridgeItemHandler *handlers.FridgeItemHandler,
+	itemUsageHandler *handlers.ItemUsageHandler,
+	jwtManager *utils.JWTManager,
+) *Router {
 	return &Router{
 		mux:               http.NewServeMux(),
 		authHandler:       authHandler,
 		fridgeItemHandler: fridgeItemHandler,
 		jwtManager:        jwtManager,
+		itemUsageHandler:  itemUsageHandler,
 	}
 }
 
@@ -30,6 +37,7 @@ func (r *Router) Setup() http.Handler {
 	r.mux.Handle("GET /health", http.HandlerFunc(r.healthCheck))
 	r.mux.Handle("POST /api/v1/items", http.HandlerFunc(r.fridgeItemHandler.AddItem))
 	r.mux.Handle("GET /api/v1/items", http.HandlerFunc(r.fridgeItemHandler.GetByUserID))
+	r.mux.Handle("POST /api/v1/usage", http.HandlerFunc(r.itemUsageHandler.CreateItemUsage))
 
 	handler := middleware.Chain(
 		middleware.Recovery(),

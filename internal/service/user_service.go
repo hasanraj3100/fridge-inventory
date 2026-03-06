@@ -28,13 +28,20 @@ type userService struct {
 	userRepo        repository.UserRepository
 	passwordManager *utils.PasswordManager
 	jwtManager      *utils.JWTManager
+	txManager       repository.TransactionProvider
 }
 
-func NewUserService(userRepo repository.UserRepository, passwordManager *utils.PasswordManager, jwtManager *utils.JWTManager) UserService {
+func NewUserService(
+	userRepo repository.UserRepository,
+	passwordManager *utils.PasswordManager,
+	jwtManager *utils.JWTManager,
+	txManager repository.TransactionProvider,
+) UserService {
 	return &userService{
 		userRepo:        userRepo,
 		passwordManager: passwordManager,
 		jwtManager:      jwtManager,
+		txManager:       txManager,
 	}
 }
 

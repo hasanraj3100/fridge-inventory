@@ -18,15 +18,15 @@ func main() {
 	cfg := config.GetConfig()
 	fmt.Println("config loaded successfully")
 
-	db, err := db.NewDatabaseConnection(cfg)
+	dbCon, err := db.NewDatabaseConnection(cfg)
 	if err != nil {
 		fmt.Println("failed to connect to database:", err)
 		return
 	}
-	defer db.Close()
+	defer dbCon.Close()
 	fmt.Println("database connected successfully")
 
-	if err := repository.Migrate(db); err != nil {
+	if err := db.Migrate(dbCon); err != nil {
 		fmt.Println("failed to migrate database:", err)
 		return
 	}
@@ -36,19 +36,25 @@ func main() {
 	jwtManager := utils.NewJWTManager(cfg.JWTSecretKey)
 	passwordManager := utils.NewPasswordManager(12)
 
-	// Domain Related
-	userRepo := repository.NewUserRepository(db)
-	userService := service.NewUserService(userRepo, passwordManager, jwtManager)
+	// Repositories and Services
+	txManager := repository.NewSQLTransactionProvider(dbCon)
 
-	fridgeRepo := repository.NewFridgeItemRepository(db)
-	fridgeItemService := service.NewFridgeItemService(fridgeRepo)
+	userRepo := repository.NewUserRepository(dbCon)
+	userService := service.NewUserService(userRepo, passwordManager, jwtManager, txManager)
+
+	fridgeRepo := repository.NewFridgeItemRepository(dbCon)
+	fridgeItemService := service.NewFridgeItemService(fridgeRepo, txManager)
+
+	itemUsageRepo := repository.NewItemUsageRepository(dbCon)
+	itemUsageService := service.NewItemUsageService(itemUsageRepo, fridgeRepo, txManager)
 
 	// Handlers
 	authHandler := handlers.NewAuthHandler(userService)
 	fridgeItemHandler := handlers.NewFridgeItemHandler(fridgeItemService)
+	itemUsageHandler := handlers.NewItemUsageHandler(itemUsageService)
 
 	// Router
-	router := routes.NewRouter(authHandler, fridgeItemHandler, jwtManager)
+	router := routes.NewRouter(authHandler, fridgeItemHandler, itemUsageHandler, jwtManager)
 	handler := router.Setup()
 
 	addr := fmt.Sprintf(":%d", cfg.Port)

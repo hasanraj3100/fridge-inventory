@@ -20,11 +20,13 @@ type FridgeItemService interface {
 
 type fridgeItemService struct {
 	fridgeItemRepo repository.FridgeItemRepository
+	txManager      repository.TransactionProvider
 }
 
-func NewFridgeItemService(fridgeItemRepo repository.FridgeItemRepository) FridgeItemService {
+func NewFridgeItemService(fridgeItemRepo repository.FridgeItemRepository, txManager repository.TransactionProvider) FridgeItemService {
 	return &fridgeItemService{
 		fridgeItemRepo: fridgeItemRepo,
+		txManager:      txManager,
 	}
 }
 

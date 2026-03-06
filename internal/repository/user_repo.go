@@ -1,3 +1,4 @@
+// Package repository acts as a data access layer
 package repository
 
 import (
