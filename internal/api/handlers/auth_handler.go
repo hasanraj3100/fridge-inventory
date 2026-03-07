@@ -39,10 +39,13 @@ func (ah *AuthHandler) Register(w http.ResponseWriter, r *http.Request) {
 
 	err := ah.userService.Register(r.Context(), req)
 	if err != nil {
-		if errors.Is(err, service.ErrUserAlreadyExists) {
+		switch err {
+		case service.ErrUserAlreadyExists:
 			response.ResponseWithError(w, http.StatusConflict, err.Error())
-		} else {
-			log.Printf("Register error: %v", err)
+		case service.ErrUserNameAlreadyExists:
+			response.ResponseWithError(w, http.StatusConflict, err.Error())
+		default:
+			log.Printf("Registration error: %v", err)
 			response.ResponseWithError(w, http.StatusInternalServerError, "Failed to register user")
 		}
 		return

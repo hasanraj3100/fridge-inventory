@@ -14,8 +14,9 @@ import (
 )
 
 var (
-	ErrUserAlreadyExists  = errors.New("user with this email already exists")
-	ErrInvalidCredentials = errors.New("invalid email or password")
+	ErrUserAlreadyExists     = errors.New("user with this email already exists")
+	ErrInvalidCredentials    = errors.New("invalid email or password")
+	ErrUserNameAlreadyExists = errors.New("user with this username already exists")
 )
 
 type UserService interface {
@@ -52,6 +53,13 @@ func (s *userService) Register(ctx context.Context, params dto.RegisterRequest) 
 	}
 	if existingUser != nil {
 		return ErrUserAlreadyExists
+	}
+	existingUserName, err := s.userRepo.GetByUserName(ctx, params.Username)
+	if err != nil {
+		return fmt.Errorf("failed to check existing username: %w", err)
+	}
+	if existingUserName != nil {
+		return ErrUserNameAlreadyExists
 	}
 
 	hashedPassword, err := s.passwordManager.HashPassword(params.Password)
