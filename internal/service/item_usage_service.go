@@ -2,12 +2,18 @@ package service
 
 import (
 	"context"
-	"fmt"
+	"errors"
 
 	"github.com/hasanraj3100/fridge-inventory/internal/api/dto"
 	"github.com/hasanraj3100/fridge-inventory/internal/db"
 	"github.com/hasanraj3100/fridge-inventory/internal/domain"
 	"github.com/hasanraj3100/fridge-inventory/internal/repository"
+)
+
+var (
+	ErrItemNotFound         = errors.New("item not found")
+	ErrUnauthorized         = errors.New("item does not belong to user")
+	ErrInsufficientQuantity = errors.New("quantity used is greater than available quantity")
 )
 
 type ItemUsageService interface {
@@ -39,14 +45,14 @@ func (s *itemUsageService) CreateItemUsage(ctx context.Context, userID int64, pa
 
 		item, err := fridgeItemRepo.GetByID(ctx, params.ItemID)
 		if err != nil {
-			return err
+			return ErrItemNotFound
 		}
-		if item == nil || item.UserID != userID {
-			return fmt.Errorf("item not found or does not belong to user")
+		if item.UserID != userID {
+			return ErrUnauthorized
 		}
 
 		if params.QuantityUsed > item.Quantity {
-			return fmt.Errorf("quantity used is greater than available quantity")
+			return ErrInsufficientQuantity
 		}
 
 		item.Quantity -= params.QuantityUsed

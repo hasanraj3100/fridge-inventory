@@ -43,9 +43,16 @@ func (iuh *ItemUsageHandler) CreateItemUsage(w http.ResponseWriter, r *http.Requ
 
 	err = iuh.itemUsageService.CreateItemUsage(r.Context(), user.ID, req)
 	if err != nil {
-		log.Printf("CreateItemUsage error: %v", err)
-		response.ResponseWithError(w, http.StatusInternalServerError, "Failed to create item usage")
-		return
+		switch err {
+		case service.ErrItemNotFound:
+			response.ResponseWithError(w, http.StatusNotFound, err.Error())
+		case service.ErrUnauthorized:
+			response.ResponseWithError(w, http.StatusForbidden, err.Error())
+		case service.ErrInsufficientQuantity:
+			response.ResponseWithError(w, http.StatusBadRequest, err.Error())
+		default:
+			log.Printf("CreateItemUsage error: %v", err)
+			response.ResponseWithError(w, http.StatusInternalServerError, "Failed to create item usage")
+		}
 	}
-	response.ResponseWithJSON(w, http.StatusCreated, map[string]string{"message": "Item usage recorded successfully"})
 }
