@@ -16,6 +16,7 @@ type FridgeItemRepository interface {
 	BelongsToUser(ctx context.Context, itemID int64, userID int64) (bool, error)
 	DecreaseQuantity(ctx context.Context, itemID int64, amount float64) error
 	Update(ctx context.Context, item *domain.FridgeItem) error
+	Delete(ctx context.Context, itemID int64) error
 }
 
 type fridgeItemRepository struct {
@@ -179,6 +180,26 @@ func (repo *fridgeItemRepository) DecreaseQuantity(ctx context.Context, itemID i
 
 	if rows == 0 {
 		return fmt.Errorf("insufficient quantity or item not found")
+	}
+
+	return nil
+}
+
+func (repo *fridgeItemRepository) Delete(ctx context.Context, itemID int64) error {
+	query := `DELETE FROM fridge_items WHERE id = $1`
+
+	res, err := repo.DB.ExecContext(ctx, query, itemID)
+	if err != nil {
+		return fmt.Errorf("failed to delete fridge item: %w", err)
+	}
+
+	rows, err := res.RowsAffected()
+	if err != nil {
+		return err
+	}
+
+	if rows == 0 {
+		return fmt.Errorf("item not found")
 	}
 
 	return nil

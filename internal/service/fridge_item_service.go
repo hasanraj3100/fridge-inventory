@@ -17,6 +17,7 @@ type FridgeItemService interface {
 	) (*domain.FridgeItem, error)
 	GetByUserID(ctx context.Context, userID int64) ([]*domain.FridgeItem, error)
 	UpdateItem(ctx context.Context, itemID int64, userID int64, params dto.FridgeItemUpdateRequest) (*domain.FridgeItem, error)
+	DeleteItem(ctx context.Context, itemID int64, userID int64) error
 }
 
 type fridgeItemService struct {
@@ -129,4 +130,23 @@ func (s *fridgeItemService) UpdateItem(ctx context.Context, itemID int64, userID
 	}
 
 	return updatedItem, nil
+}
+
+func (s *fridgeItemService) DeleteItem(ctx context.Context, itemID int64, userID int64) error {
+	// Check if item exists and belongs to user
+	exists, err := s.fridgeItemRepo.BelongsToUser(ctx, itemID, userID)
+	if err != nil {
+		return fmt.Errorf("failed to verify item ownership: %w", err)
+	}
+	if !exists {
+		return fmt.Errorf("item not found or does not belong to user")
+	}
+
+	// Delete the item
+	err = s.fridgeItemRepo.Delete(ctx, itemID)
+	if err != nil {
+		return fmt.Errorf("failed to delete item: %w", err)
+	}
+
+	return nil
 }

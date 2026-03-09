@@ -106,3 +106,31 @@ func (fih *FridgeItemHandler) UpdateItem(w http.ResponseWriter, r *http.Request)
 
 	response.ResponseWithJSON(w, http.StatusOK, updatedItem)
 }
+
+func (fih *FridgeItemHandler) DeleteItem(w http.ResponseWriter, r *http.Request) {
+	user, ok := middleware.GetAuthUser(r.Context())
+	if !ok {
+		response.ResponseWithError(w, http.StatusUnauthorized, "Unauthorized")
+		return
+	}
+
+	itemIDStr := r.PathValue("id")
+	itemID, err := strconv.ParseInt(itemIDStr, 10, 64)
+	if err != nil {
+		response.ResponseWithError(w, http.StatusBadRequest, "Invalid item ID")
+		return
+	}
+
+	err = fih.fridgeItemService.DeleteItem(r.Context(), itemID, user.ID)
+	if err != nil {
+		if err.Error() == "item not found or does not belong to user" {
+			response.ResponseWithError(w, http.StatusNotFound, "Item not found")
+			return
+		}
+		response.ResponseWithError(w, http.StatusInternalServerError, "Failed to delete item")
+		log.Printf("DeleteItem error: %v", err)
+		return
+	}
+
+	response.ResponseWithJSON(w, http.StatusOK, map[string]string{"message": "Item deleted successfully"})
+}
