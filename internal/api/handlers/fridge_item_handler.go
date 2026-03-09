@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"log"
 	"net/http"
+	"strconv"
 
 	"github.com/hasanraj3100/fridge-inventory/internal/api/dto"
 	"github.com/hasanraj3100/fridge-inventory/internal/api/response"
@@ -64,4 +65,44 @@ func (fih *FridgeItemHandler) GetByUserID(w http.ResponseWriter, r *http.Request
 	}
 
 	response.ResponseWithJSON(w, http.StatusOK, items)
+}
+
+func (fih *FridgeItemHandler) UpdateItem(w http.ResponseWriter, r *http.Request) {
+	user, ok := middleware.GetAuthUser(r.Context())
+	if !ok {
+		response.ResponseWithError(w, http.StatusUnauthorized, "Unauthorized")
+		return
+	}
+
+	itemIDStr := r.PathValue("id")
+	itemID, err := strconv.ParseInt(itemIDStr, 10, 64)
+	if err != nil {
+		response.ResponseWithError(w, http.StatusBadRequest, "Invalid item ID")
+		return
+	}
+
+	var req dto.FridgeItemUpdateRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		response.ResponseWithError(w, http.StatusBadRequest, "Invalid request payload")
+		return
+	}
+
+	if err := response.Validator.Struct(req); err != nil {
+		niceErrors := response.FormatValidationError(err)
+		response.ResponseWithValidationErrors(w, http.StatusBadRequest, "Validation failed", niceErrors)
+		return
+	}
+
+	updatedItem, err := fih.fridgeItemService.UpdateItem(r.Context(), itemID, user.ID, req)
+	if err != nil {
+		if err.Error() == "item not found or does not belong to user" {
+			response.ResponseWithError(w, http.StatusNotFound, "Item not found")
+			return
+		}
+		response.ResponseWithError(w, http.StatusInternalServerError, "Failed to update item")
+		log.Printf("UpdateItem error: %v", err)
+		return
+	}
+
+	response.ResponseWithJSON(w, http.StatusOK, updatedItem)
 }

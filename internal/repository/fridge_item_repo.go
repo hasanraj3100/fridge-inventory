@@ -74,48 +74,60 @@ func (repo *fridgeItemRepository) GetByUserID(ctx context.Context, userID int64)
 func (repo *fridgeItemRepository) Update(ctx context.Context, item *domain.FridgeItem) error {
 	item.UpdatedAt = time.Now().UTC()
 
-	cnt := 1
 	query := `UPDATE fridge_items SET `
+	args := []interface{}{}
+	cnt := 1
 
 	if item.Name != "" {
 		query += fmt.Sprintf("name = $%d, ", cnt)
+		args = append(args, item.Name)
 		cnt++
 	}
 
 	if item.Category != "" {
 		query += fmt.Sprintf("category = $%d, ", cnt)
+		args = append(args, item.Category)
 		cnt++
 	}
 
 	if item.Quantity != 0 {
 		query += fmt.Sprintf("quantity = $%d, ", cnt)
+		args = append(args, item.Quantity)
 		cnt++
 	}
 
 	if item.Unit != "" {
 		query += fmt.Sprintf("unit = $%d, ", cnt)
+		args = append(args, item.Unit)
 		cnt++
 	}
 
 	if !item.BoughtAt.IsZero() {
 		query += fmt.Sprintf("bought_at = $%d, ", cnt)
+		args = append(args, item.BoughtAt)
 		cnt++
 	}
 
 	if !item.ExpiresAt.IsZero() {
 		query += fmt.Sprintf("expires_at = $%d, ", cnt)
+		args = append(args, item.ExpiresAt)
 		cnt++
 	}
 
 	if item.MinThreshold != 0 {
 		query += fmt.Sprintf("min_threshold = $%d, ", cnt)
+		args = append(args, item.MinThreshold)
 		cnt++
 	}
 
 	query += fmt.Sprintf("updated_at = $%d ", cnt)
-	query += fmt.Sprintf("WHERE id = $%d", cnt+1)
+	args = append(args, item.UpdatedAt)
+	cnt++
 
-	_, err := repo.DB.ExecContext(ctx, query, item.Name, item.Category, item.Quantity, item.Unit, item.BoughtAt, item.ExpiresAt, item.MinThreshold, item.UpdatedAt, item.ID)
+	query += fmt.Sprintf("WHERE id = $%d", cnt)
+	args = append(args, item.ID)
+
+	_, err := repo.DB.ExecContext(ctx, query, args...)
 	if err != nil {
 		return fmt.Errorf("failed to update fridge item: %w", err)
 	}
