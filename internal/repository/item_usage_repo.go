@@ -11,6 +11,8 @@ import (
 
 type ItemUsageRepository interface {
 	Create(ctx context.Context, itemUsage *domain.ItemUsage) error
+	GetByUserIDWithPagination(ctx context.Context, userID int64, limit int, offset int) ([]map[string]interface{}, error)
+	CountByUserID(ctx context.Context, userID int64) (int64, error)
 }
 
 type itemUsageRepository struct {
@@ -39,4 +41,70 @@ func (repo *itemUsageRepository) Create(ctx context.Context, itemUsage *domain.I
 	}
 
 	return nil
+}
+
+func (repo *itemUsageRepository) GetByUserIDWithPagination(ctx context.Context, userID int64, limit int, offset int) ([]map[string]interface{}, error) {
+	query := `
+		SELECT 
+			iu.id,
+			iu.item_id,
+			fi.name as item_name,
+			iu.quantity_used,
+			fi.unit,
+			iu.reason,
+			iu.used_at
+		FROM item_usage iu
+		INNER JOIN fridge_items fi ON iu.item_id = fi.id
+		WHERE fi.user_id = $1
+		ORDER BY iu.used_at DESC
+		LIMIT $2 OFFSET $3
+	`
+
+	rows, err := repo.DB.QueryContext(ctx, query, userID, limit, offset)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get item usage: %w", err)
+	}
+	defer rows.Close()
+
+	var results []map[string]interface{}
+	for rows.Next() {
+		var id, itemID int64
+		var itemName, unit, reason string
+		var quantityUsed float32
+		var usedAt time.Time
+
+		err := rows.Scan(&id, &itemID, &itemName, &quantityUsed, &unit, &reason, &usedAt)
+		if err != nil {
+			return nil, fmt.Errorf("failed to scan item usage: %w", err)
+		}
+
+		results = append(results, map[string]interface{}{
+			"id":            id,
+			"item_id":       itemID,
+			"item_name":     itemName,
+			"quantity_used": quantityUsed,
+			"unit":          unit,
+			"reason":        reason,
+			"used_at":       usedAt,
+		})
+	}
+
+	return results, nil
+}
+
+func (repo *itemUsageRepository) CountByUserID(ctx context.Context, userID int64) (int64, error) {
+	query := `
+		SELECT COUNT(*)
+		FROM item_usage iu
+		INNER JOIN fridge_items fi ON iu.item_id = fi.id
+		WHERE fi.user_id = $1
+	`
+
+	var count int64
+	err := repo.DB.QueryRowContext(ctx, query, userID).Scan(&count)
+	if err != nil {
+		return 0, fmt.Errorf("failed to count item usage: %w", err)
+	}
+
+	return count, nil
 }

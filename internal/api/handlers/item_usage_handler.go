@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"log"
 	"net/http"
+	"strconv"
 
 	"github.com/hasanraj3100/fridge-inventory/internal/api/dto"
 	"github.com/hasanraj3100/fridge-inventory/internal/api/response"
@@ -55,4 +56,40 @@ func (iuh *ItemUsageHandler) CreateItemUsage(w http.ResponseWriter, r *http.Requ
 			response.ResponseWithError(w, http.StatusInternalServerError, "Failed to create item usage")
 		}
 	}
+}
+
+func (iuh *ItemUsageHandler) GetItemUsageByUserID(w http.ResponseWriter, r *http.Request) {
+	user, ok := middleware.GetAuthUser(r.Context())
+	if !ok {
+		response.ResponseWithError(w, http.StatusUnauthorized, "Unauthorized")
+		return
+	}
+
+	// Parse query parameters
+	pageStr := r.URL.Query().Get("page")
+	pageSizeStr := r.URL.Query().Get("page_size")
+
+	page := 1
+	pageSize := 10
+
+	if pageStr != "" {
+		if p, err := strconv.Atoi(pageStr); err == nil && p > 0 {
+			page = p
+		}
+	}
+
+	if pageSizeStr != "" {
+		if ps, err := strconv.Atoi(pageSizeStr); err == nil && ps > 0 && ps <= 100 {
+			pageSize = ps
+		}
+	}
+
+	result, err := iuh.itemUsageService.GetItemUsageByUserID(r.Context(), user.ID, page, pageSize)
+	if err != nil {
+		log.Printf("GetItemUsageByUserID error: %v", err)
+		response.ResponseWithError(w, http.StatusInternalServerError, "Failed to get item usage")
+		return
+	}
+
+	response.ResponseWithJSON(w, http.StatusOK, result)
 }
