@@ -15,6 +15,7 @@ type ItemUsageRepository interface {
 	GetByUserIDWithPagination(ctx context.Context, userID int64, limit int, offset int) ([]map[string]interface{}, error)
 	CountByUserID(ctx context.Context, userID int64) (int64, error)
 	Update(ctx context.Context, itemUsage *domain.ItemUsage) error
+	Delete(ctx context.Context, id int64) error
 }
 
 type itemUsageRepository struct {
@@ -135,6 +136,26 @@ func (repo *itemUsageRepository) Update(ctx context.Context, itemUsage *domain.I
 	res, err := repo.DB.ExecContext(ctx, query, itemUsage.QuantityUsed, itemUsage.Reason, itemUsage.ID)
 	if err != nil {
 		return fmt.Errorf("failed to update item usage: %w", err)
+	}
+
+	rows, err := res.RowsAffected()
+	if err != nil {
+		return err
+	}
+
+	if rows == 0 {
+		return fmt.Errorf("item usage not found")
+	}
+
+	return nil
+}
+
+func (repo *itemUsageRepository) Delete(ctx context.Context, id int64) error {
+	query := `DELETE FROM item_usage WHERE id = $1`
+
+	res, err := repo.DB.ExecContext(ctx, query, id)
+	if err != nil {
+		return fmt.Errorf("failed to delete item usage: %w", err)
 	}
 
 	rows, err := res.RowsAffected()

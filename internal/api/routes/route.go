@@ -42,6 +42,7 @@ func (r *Router) Setup() http.Handler {
 	r.mux.Handle("POST /api/v1/usage", http.HandlerFunc(r.itemUsageHandler.CreateItemUsage))
 	r.mux.Handle("GET /api/v1/usage", http.HandlerFunc(r.itemUsageHandler.GetItemUsageByUserID))
 	r.mux.Handle("PATCH /api/v1/usage/{id}", http.HandlerFunc(r.itemUsageHandler.UpdateItemUsage))
+	r.mux.Handle("DELETE /api/v1/usage/{id}", http.HandlerFunc(r.itemUsageHandler.DeleteItemUsage))
 
 	handler := middleware.Chain(
 		middleware.Recovery(),

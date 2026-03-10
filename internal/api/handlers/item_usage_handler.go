@@ -139,3 +139,34 @@ func (iuh *ItemUsageHandler) UpdateItemUsage(w http.ResponseWriter, r *http.Requ
 
 	response.ResponseWithJSON(w, http.StatusOK, map[string]string{"message": "Item usage updated successfully"})
 }
+
+func (iuh *ItemUsageHandler) DeleteItemUsage(w http.ResponseWriter, r *http.Request) {
+	usageIDStr := r.PathValue("id")
+	usageID, err := strconv.ParseInt(usageIDStr, 10, 64)
+	if err != nil {
+		response.ResponseWithError(w, http.StatusBadRequest, "Invalid usage ID")
+		return
+	}
+
+	user, ok := middleware.GetAuthUser(r.Context())
+	if !ok {
+		response.ResponseWithError(w, http.StatusUnauthorized, "Unauthorized")
+		return
+	}
+
+	err = iuh.itemUsageService.DeleteItemUsage(r.Context(), user.ID, usageID)
+	if err != nil {
+		switch err {
+		case service.ErrItemNotFound:
+			response.ResponseWithError(w, http.StatusNotFound, err.Error())
+		case service.ErrUnauthorized:
+			response.ResponseWithError(w, http.StatusForbidden, err.Error())
+		default:
+			log.Printf("DeleteItemUsage error: %v", err)
+			response.ResponseWithError(w, http.StatusInternalServerError, "Failed to delete item usage")
+		}
+		return
+	}
+
+	response.ResponseWithJSON(w, http.StatusOK, map[string]string{"message": "Item usage deleted successfully"})
+}

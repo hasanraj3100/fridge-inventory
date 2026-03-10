@@ -21,6 +21,7 @@ type ItemUsageService interface {
 	CreateItemUsage(ctx context.Context, userID int64, params dto.ItemUsageCreateRequest) error
 	GetItemUsageByUserID(ctx context.Context, userID int64, page int, pageSize int) (*dto.PaginatedItemUsageResponse, error)
 	UpdateItemUsage(ctx context.Context, userID int64, usageID int64, params dto.ItemUsageUpdateRequest) error
+	DeleteItemUsage(ctx context.Context, userID int64, usageID int64) error
 }
 
 type itemUsageService struct {
@@ -180,6 +181,47 @@ func (s *itemUsageService) UpdateItemUsage(ctx context.Context, userID int64, us
 		existingUsage.QuantityUsed = params.QuantityUsed
 		existingUsage.Reason = domain.ItemUsageReason(params.Reason)
 		err = itemUsageRepo.Update(ctx, existingUsage)
+		if err != nil {
+			return err
+		}
+
+		return nil
+	})
+
+	return err
+}
+
+func (s *itemUsageService) DeleteItemUsage(ctx context.Context, userID int64, usageID int64) error {
+	err := s.txManager.WithinTransaction(ctx, func(tx db.DBTX) error {
+		fridgeItemRepo := repository.NewFridgeItemRepository(tx)
+		itemUsageRepo := repository.NewItemUsageRepository(tx)
+
+		// Get the existing item usage
+		existingUsage, err := itemUsageRepo.GetByID(ctx, usageID)
+		if err != nil {
+			return ErrItemNotFound
+		}
+
+		// Get the fridge item to verify ownership
+		item, err := fridgeItemRepo.GetByID(ctx, existingUsage.ItemID)
+		if err != nil {
+			return ErrItemNotFound
+		}
+
+		// Verify the item belongs to the user
+		if item.UserID != userID {
+			return ErrUnauthorized
+		}
+
+		// Restore the quantity back to the fridge item
+		item.Quantity += existingUsage.QuantityUsed
+		err = fridgeItemRepo.Update(ctx, item)
+		if err != nil {
+			return err
+		}
+
+		// Delete the item usage
+		err = itemUsageRepo.Delete(ctx, usageID)
 		if err != nil {
 			return err
 		}
