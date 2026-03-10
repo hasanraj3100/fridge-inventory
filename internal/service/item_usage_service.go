@@ -20,6 +20,7 @@ var (
 type ItemUsageService interface {
 	CreateItemUsage(ctx context.Context, userID int64, params dto.ItemUsageCreateRequest) error
 	GetItemUsageByUserID(ctx context.Context, userID int64, page int, pageSize int) (*dto.PaginatedItemUsageResponse, error)
+	UpdateItemUsage(ctx context.Context, userID int64, usageID int64, params dto.ItemUsageUpdateRequest) error
 }
 
 type itemUsageService struct {
@@ -136,4 +137,55 @@ func (s *itemUsageService) GetItemUsageByUserID(ctx context.Context, userID int6
 			TotalPages: totalPages,
 		},
 	}, nil
+}
+
+func (s *itemUsageService) UpdateItemUsage(ctx context.Context, userID int64, usageID int64, params dto.ItemUsageUpdateRequest) error {
+	err := s.txManager.WithinTransaction(ctx, func(tx db.DBTX) error {
+		fridgeItemRepo := repository.NewFridgeItemRepository(tx)
+		itemUsageRepo := repository.NewItemUsageRepository(tx)
+
+		// Get the existing item usage
+		existingUsage, err := itemUsageRepo.GetByID(ctx, usageID)
+		if err != nil {
+			return ErrItemNotFound
+		}
+
+		// Get the fridge item to verify ownership
+		item, err := fridgeItemRepo.GetByID(ctx, existingUsage.ItemID)
+		if err != nil {
+			return ErrItemNotFound
+		}
+
+		// Verify the item belongs to the user
+		if item.UserID != userID {
+			return ErrUnauthorized
+		}
+
+		// Calculate the difference in quantity
+		quantityDiff := params.QuantityUsed - existingUsage.QuantityUsed
+
+		// Check if the new quantity is valid
+		if quantityDiff > item.Quantity {
+			return ErrInsufficientQuantity
+		}
+
+		// Update the fridge item quantity
+		item.Quantity -= quantityDiff
+		err = fridgeItemRepo.Update(ctx, item)
+		if err != nil {
+			return err
+		}
+
+		// Update the item usage
+		existingUsage.QuantityUsed = params.QuantityUsed
+		existingUsage.Reason = domain.ItemUsageReason(params.Reason)
+		err = itemUsageRepo.Update(ctx, existingUsage)
+		if err != nil {
+			return err
+		}
+
+		return nil
+	})
+
+	return err
 }

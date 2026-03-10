@@ -93,3 +93,49 @@ func (iuh *ItemUsageHandler) GetItemUsageByUserID(w http.ResponseWriter, r *http
 
 	response.ResponseWithJSON(w, http.StatusOK, result)
 }
+
+func (iuh *ItemUsageHandler) UpdateItemUsage(w http.ResponseWriter, r *http.Request) {
+	usageIDStr := r.PathValue("id")
+	usageID, err := strconv.ParseInt(usageIDStr, 10, 64)
+	if err != nil {
+		response.ResponseWithError(w, http.StatusBadRequest, "Invalid usage ID")
+		return
+	}
+
+	var req dto.ItemUsageUpdateRequest
+	err = json.NewDecoder(r.Body).Decode(&req)
+	if err != nil {
+		response.ResponseWithError(w, http.StatusBadRequest, "Invalid request payload")
+		return
+	}
+
+	if err := response.Validator.Struct(req); err != nil {
+		niceErrors := response.FormatValidationError(err)
+		response.ResponseWithValidationErrors(w, http.StatusBadRequest, "Validation failed", niceErrors)
+		return
+	}
+
+	user, ok := middleware.GetAuthUser(r.Context())
+	if !ok {
+		response.ResponseWithError(w, http.StatusUnauthorized, "Unauthorized")
+		return
+	}
+
+	err = iuh.itemUsageService.UpdateItemUsage(r.Context(), user.ID, usageID, req)
+	if err != nil {
+		switch err {
+		case service.ErrItemNotFound:
+			response.ResponseWithError(w, http.StatusNotFound, err.Error())
+		case service.ErrUnauthorized:
+			response.ResponseWithError(w, http.StatusForbidden, err.Error())
+		case service.ErrInsufficientQuantity:
+			response.ResponseWithError(w, http.StatusBadRequest, err.Error())
+		default:
+			log.Printf("UpdateItemUsage error: %v", err)
+			response.ResponseWithError(w, http.StatusInternalServerError, "Failed to update item usage")
+		}
+		return
+	}
+
+	response.ResponseWithJSON(w, http.StatusOK, map[string]string{"message": "Item usage updated successfully"})
+}

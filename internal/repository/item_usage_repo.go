@@ -11,8 +11,10 @@ import (
 
 type ItemUsageRepository interface {
 	Create(ctx context.Context, itemUsage *domain.ItemUsage) error
+	GetByID(ctx context.Context, id int64) (*domain.ItemUsage, error)
 	GetByUserIDWithPagination(ctx context.Context, userID int64, limit int, offset int) ([]map[string]interface{}, error)
 	CountByUserID(ctx context.Context, userID int64) (int64, error)
+	Update(ctx context.Context, itemUsage *domain.ItemUsage) error
 }
 
 type itemUsageRepository struct {
@@ -107,4 +109,42 @@ func (repo *itemUsageRepository) CountByUserID(ctx context.Context, userID int64
 	}
 
 	return count, nil
+}
+
+func (repo *itemUsageRepository) GetByID(ctx context.Context, id int64) (*domain.ItemUsage, error) {
+	query := `SELECT id, item_id, quantity_used, reason, used_at FROM item_usage WHERE id = $1`
+
+	var itemUsage domain.ItemUsage
+	err := repo.DB.QueryRowContext(ctx, query, id).Scan(
+		&itemUsage.ID,
+		&itemUsage.ItemID,
+		&itemUsage.QuantityUsed,
+		&itemUsage.Reason,
+		&itemUsage.UsedAt,
+	)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get item usage by ID: %w", err)
+	}
+
+	return &itemUsage, nil
+}
+
+func (repo *itemUsageRepository) Update(ctx context.Context, itemUsage *domain.ItemUsage) error {
+	query := `UPDATE item_usage SET quantity_used = $1, reason = $2 WHERE id = $3`
+
+	res, err := repo.DB.ExecContext(ctx, query, itemUsage.QuantityUsed, itemUsage.Reason, itemUsage.ID)
+	if err != nil {
+		return fmt.Errorf("failed to update item usage: %w", err)
+	}
+
+	rows, err := res.RowsAffected()
+	if err != nil {
+		return err
+	}
+
+	if rows == 0 {
+		return fmt.Errorf("item usage not found")
+	}
+
+	return nil
 }
